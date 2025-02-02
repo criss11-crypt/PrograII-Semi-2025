@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-01-28T01:54:41.739212800Z">
+        <DropdownSelection timestamp="2025-02-02T02:50:58.906114Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\criss11\.android\avd\kriss_phone.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=29091FDH30094D" />
             </handle>
           </Target>
         </DropdownSelection>
