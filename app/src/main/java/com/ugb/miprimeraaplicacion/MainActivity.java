@@ -6,12 +6,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
     Button btn;
@@ -30,41 +25,60 @@ public class MainActivity extends AppCompatActivity {
         lblRespuesta = findViewById(R.id.lblRespuesta);
         rgo = findViewById(R.id.rgoOpciones);
 
+        // Configurar el listener del botón
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                double num1 = Double.parseDouble(txtNum1.getText().toString());
-                double num2 = Double.parseDouble(txtNum2.getText().toString());
-                double respuesta = 0;
-
-                int selectedId = rgo.getCheckedRadioButtonId(); // Obtener el ID del RadioButton seleccionado
-
-                if (selectedId == R.id.optSuma) {
-                    respuesta = num1 + num2;
-                } else if (selectedId == R.id.optResta) {
-                    respuesta = num1 - num2;
-                } else if (selectedId == R.id.optMultiplicacion) {
-                    respuesta = num1 * num2;
-                } else if (selectedId == R.id.optDivision) {
-                    respuesta = num1 / num2;
-                } else if (selectedId == R.id.optExponenciacion) {
-                    respuesta = Math.pow(num1, num2);
-                } else if (selectedId == R.id.optPorcentaje) {
-                    respuesta = (num1 * num2) / 100;
-                } else if (selectedId == R.id.optRaiz) {
-                    respuesta = Math.sqrt(num1);
-                } else if (selectedId == R.id.optFactorial) {
-                    // Calcular el factorial de num1
-                    respuesta = 1; // Inicializar la variable respuesta
-                    for (int i = 1; i <= num1; i++) {
-                        respuesta *= i; // Multiplicar respuesta por i
-                    }
-                    // Opcional: Manejar el caso en que no haya ninguna opción seleccionada
-                    respuesta = 0;
-                }
-
-                lblRespuesta.setText("Respuesta: " + respuesta);
+                calcularResultado();
             }
         });
+
+        // Listener para deshabilitar txtNum2 cuando se selecciona factorial o raíz
+        rgo.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                txtNum2.setEnabled(checkedId != R.id.optRaiz && checkedId != R.id.optFactorial);
+            }
+        });
+    }
+
+    private void calcularResultado() {
+        double num1 = Double.parseDouble(txtNum1.getText().toString());
+        double num2 = 0;
+        double respuesta = 0;
+
+        int selectedId = rgo.getCheckedRadioButtonId(); // Obtener el ID del RadioButton seleccionado
+
+        // Desactivar txtNum2 si se selecciona factorial o raíz
+        if (selectedId == R.id.optRaiz || selectedId == R.id.optFactorial) {
+            txtNum2.setEnabled(false);
+        } else {
+            txtNum2.setEnabled(true);
+            num2 = Double.parseDouble(txtNum2.getText().toString());
+        }
+
+        if (selectedId == R.id.optSuma) {
+            respuesta = num1 + num2;
+        } else if (selectedId == R.id.optResta) {
+            respuesta = num1 - num2;
+        } else if (selectedId == R.id.optMultiplicacion) {
+            respuesta = num1 * num2;
+        } else if (selectedId == R.id.optDivision) {
+            respuesta = num1 / num2;
+        } else if (selectedId == R.id.optExponenciacion) {
+            respuesta = Math.pow(num1, num2);
+        } else if (selectedId == R.id.optPorcentaje) {
+            respuesta = (num1 * num2) / 100;
+        } else if (selectedId == R.id.optRaiz) {
+            respuesta = Math.sqrt(num1);
+        } else if (selectedId == R.id.optFactorial) {
+            respuesta = 1;
+            for (int i = 1; i <= num1; i++) {
+                respuesta *= i;
+            }
+        }
+
+        // Mostrar el resultado en el TextView
+        lblRespuesta.setText("Respuesta: " + respuesta);
     }
 }
