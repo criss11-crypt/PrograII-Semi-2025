@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Listener para deshabilitar txtNum2 cuando se selecciona factorial o raíz
         rgo.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -43,42 +42,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void calcularResultado() {
-        double num1 = Double.parseDouble(txtNum1.getText().toString());
-        double num2 = 0;
-        double respuesta = 0;
+        try {
+            double num1 = Double.parseDouble(txtNum1.getText().toString());
+            double num2 = 0;
+            double respuesta = 0;
 
-        int selectedId = rgo.getCheckedRadioButtonId(); // Obtener el ID del RadioButton seleccionado
+            int selectedId = rgo.getCheckedRadioButtonId();
 
-        // Desactivar txtNum2 si se selecciona factorial o raíz
-        if (selectedId == R.id.optRaiz || selectedId == R.id.optFactorial) {
-            txtNum2.setEnabled(false);
-        } else {
-            txtNum2.setEnabled(true);
-            num2 = Double.parseDouble(txtNum2.getText().toString());
-        }
-
-        if (selectedId == R.id.optSuma) {
-            respuesta = num1 + num2;
-        } else if (selectedId == R.id.optResta) {
-            respuesta = num1 - num2;
-        } else if (selectedId == R.id.optMultiplicacion) {
-            respuesta = num1 * num2;
-        } else if (selectedId == R.id.optDivision) {
-            respuesta = num1 / num2;
-        } else if (selectedId == R.id.optExponenciacion) {
-            respuesta = Math.pow(num1, num2);
-        } else if (selectedId == R.id.optPorcentaje) {
-            respuesta = (num1 * num2) / 100;
-        } else if (selectedId == R.id.optRaiz) {
-            respuesta = Math.sqrt(num1);
-        } else if (selectedId == R.id.optFactorial) {
-            respuesta = 1;
-            for (int i = 1; i <= num1; i++) {
-                respuesta *= i;
+            if (selectedId == R.id.optRaiz || selectedId == R.id.optFactorial) {
+                txtNum2.setEnabled(false);
+            } else {
+                txtNum2.setEnabled(true);
+                num2 = Double.parseDouble(txtNum2.getText().toString());
             }
-        }
 
-        // Mostrar el resultado en el TextView
-        lblRespuesta.setText("Respuesta: " + respuesta);
+            if (selectedId == R.id.optSuma) {
+                respuesta = num1 + num2;
+            } else if (selectedId == R.id.optResta) {
+                respuesta = num1 - num2;
+            } else if (selectedId == R.id.optMultiplicacion) {
+                respuesta = num1 * num2;
+            } else if (selectedId == R.id.optDivision) {
+                if (num2 != 0) {
+                    respuesta = num1 / num2;
+                } else {
+                    lblRespuesta.setText("Error: División por cero");
+                    return;
+                }
+            } else if (selectedId == R.id.optExponenciacion) {
+                respuesta = Math.pow(num1, num2);
+            } else if (selectedId == R.id.optPorcentaje) {
+                respuesta = (num1 * num2) / 100;
+            } else if (selectedId == R.id.optRaiz) {
+                respuesta = Math.sqrt(num1);
+            } else if (selectedId == R.id.optFactorial) {
+                respuesta = 1;
+                for (int i = 1; i <= num1; i++) {
+                    respuesta *= i;
+                }
+            } else if (selectedId == R.id.optMayor) {
+                respuesta = Math.max(num1, num2);
+            } else if (selectedId == R.id.optModulo) {
+                if (num2 != 0) {
+                    respuesta = num1 % num2;
+                } else {
+                    lblRespuesta.setText("Error: Módulo por cero");
+                    return;
+                }
+            }
+
+            lblRespuesta.setText("Respuesta: " + respuesta);
+
+        } catch (NumberFormatException e) {
+            lblRespuesta.setText("Error: Entrada no válida");
+        }
     }
 }
