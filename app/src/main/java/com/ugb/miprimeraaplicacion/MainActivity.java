@@ -1,162 +1,139 @@
 package com.ugb.miprimeraaplicacion;
 
+import android.app.TabActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TabHost;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+public class MainActivity extends TabActivity {
 
-public class MainActivity extends AppCompatActivity {
-    TabHost tbh;
-    Button btn;
-    TextView tempVal;
-    Spinner spnDe, spnA;
-    conversores objConversores = new conversores();
+    private Spinner unidadEntradaSpinner;
+    private Spinner unidadSalidaSpinner;
+    private EditText valorEntradaEditText;
+    private TextView resultadoConversionTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tbh = findViewById(R.id.tbhConversor);
-        tbh.setup();
+        TabHost tabHost = getTabHost();
 
-        tbh.addTab(tbh.newTabSpec("Monedas").setContent(R.id.tabMonedas).setIndicator("MONEDAS", null));
-        tbh.addTab(tbh.newTabSpec("Longitud").setContent(R.id.tabLongitud).setIndicator("LONGITUD", null));
-        tbh.addTab(tbh.newTabSpec("Tiempo").setContent(R.id.tabTiempo).setIndicator("TIEMPO", null));
-        tbh.addTab(tbh.newTabSpec("Almacenamiento").setContent(R.id.tabAlmacenamiento).setIndicator("ALMACENAMIENTO", null));
-        tbh.addTab(tbh.newTabSpec("Masa").setContent(R.id.tabMasa).setIndicator("MASA", null));
-        tbh.addTab(tbh.newTabSpec("Volumen").setContent(R.id.tabVolumen).setIndicator("VOLUMEN", null));
-        tbh.addTab(tbh.newTabSpec("Transferencia").setContent(R.id.tabTransferenciadeDatos).setIndicator("TRANSFERENCIA", null));
+        // Pestaña 1: Consumo de agua
+        TabHost.TabSpec tab1 = tabHost.newTabSpec("Tab1");
+        tab1.setIndicator("Consumo");
+        tab1.setContent(R.id.tab1);
+        tabHost.addTab(tab1);
 
-        btn = findViewById(R.id.btnCalcular);
-        btn.setOnClickListener(new View.OnClickListener() {
+        // Pestaña 2: Conversor de áreas
+        TabHost.TabSpec tab2 = tabHost.newTabSpec("Tab2");
+        tab2.setIndicator("Conversor");
+        tab2.setContent(R.id.tab2);
+        tabHost.addTab(tab2);
+
+        // Configurar la lógica de la primera pestaña
+        Button calcularButton = findViewById(R.id.calcularButton);
+        calcularButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int opcion = tbh.getCurrentTab();
-                int de = 0, a = 0;
-                double cantidad = 0;
-                String msg = "";
+                EditText consumoInput = findViewById(R.id.consumoInput);
+                TextView resultadoTextView = findViewById(R.id.resultadoTextView);
 
-                tempVal = findViewById(R.id.txtCantidad);
-                try {
-                    cantidad = Double.parseDouble(tempVal.getText().toString());
-                } catch (NumberFormatException e) {
-                    tempVal = findViewById(R.id.lblRespuesta);
-                    tempVal.setText("Error: Ingresa un número válido");
-                    return;
-                }
+                int metrosConsumidos = Integer.parseInt(consumoInput.getText().toString());
+                double valorAPagar = calcularValor(metrosConsumidos);
+                resultadoTextView.setText("Valor a pagar: $" + valorAPagar);
+            }
+        });
 
-                switch (opcion) {
-                    case 0: // Monedas
-                        spnDe = findViewById(R.id.spnDeMonedas);
-                        spnA = findViewById(R.id.spnAMonedas);
-                        msg = "Conversión de moneda ";
-                        break;
-                    case 1: // Longitud
-                        spnDe = findViewById(R.id.spnDeLongitud);
-                        spnA = findViewById(R.id.spnALongitud);
-                        msg = "Conversión de longitud ";
-                        break;
-                    case 2: // Tiempo
-                        spnDe = findViewById(R.id.spnDeTiempo);
-                        spnA = findViewById(R.id.spnATiempo);
-                        msg = "Conversión de tiempo ";
-                        break;
-                    case 3: // Almacenamiento
-                        spnDe = findViewById(R.id.spnDeAlmacenamiento);
-                        spnA = findViewById(R.id.spnAAlmacenamiento);
-                        msg = "Conversión de almacenamiento ";
-                        break;
-                    case 4: // Masa
-                        spnDe = findViewById(R.id.spnDeMasa);
-                        spnA = findViewById(R.id.spnAMasa);
-                        msg = "Conversión de masa ";
-                        break;
-                    case 5: // Volumen
-                        spnDe = findViewById(R.id.spnDeVolumen);
-                        spnA = findViewById(R.id.spnAVolumen);
-                        msg = "Conversión de volumen ";
-                        break;
-                    case 6: // Transferencia de Datos
-                        spnDe = findViewById(R.id.spnDeTransferenciadeDatos);
-                        spnA = findViewById(R.id.spnATransferenciadeDatos);
-                        msg = "Conversión de transferencia de datos ";
-                        break;
-                    default:
-                        tempVal = findViewById(R.id.lblRespuesta);
-                        tempVal.setText("Error: Pestaña no reconocida");
-                        return;
-                }
+        // Configurar la lógica de la segunda pestaña
+        unidadEntradaSpinner = findViewById(R.id.unidadEntradaSpinner);
+        unidadSalidaSpinner = findViewById(R.id.unidadSalidaSpinner);
+        valorEntradaEditText = findViewById(R.id.valorEntradaEditText);
+        resultadoConversionTextView = findViewById(R.id.resultadoConversionTextView);
 
-                de = spnDe.getSelectedItemPosition();
-                a = spnA.getSelectedItemPosition();
+        String[] unidades = {"Pie Cuadrado", "Vara Cuadrada", "Yarda Cuadrada", "Metro Cuadrado", "Tareas", "Manzana", "Hectárea"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, unidades);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        unidadEntradaSpinner.setAdapter(adapter);
+        unidadSalidaSpinner.setAdapter(adapter);
 
-                Log.d("Conversión", "Opción: " + opcion);
-                Log.d("Conversión", "De: " + de + " A: " + a);
-                Log.d("Conversión", "Cantidad: " + cantidad);
-
-                String unidadDe = spnDe.getSelectedItem().toString(); // Obtener el texto seleccionado
-                String unidadA = spnA.getSelectedItem().toString();   // Obtener el texto seleccionado
-
-                double respuesta = objConversores.convertir(opcion, de, a, cantidad);
-
-                tempVal = findViewById(R.id.lblRespuesta);
-                tempVal.setText("Respuesta: " + respuesta);
-                msg += "\n" + cantidad + " " + unidadDe + " → " + respuesta + " " + unidadA;
-                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
-
+        Button convertirButton = findViewById(R.id.convertirButton);
+        convertirButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                convertirArea();
             }
         });
     }
-}
-class conversores {
-    double[][] valores = {
-            // Monedas
-            {1.0, 0.98, 7.73, 25.45, 36.78, 508.87, 8.74, 20.61, 3.72, 151.86},
 
-            // Longitud
-            {0.001, 0.01, 1, 1000, 0.0254, 0.3048, 0.9144, 1609.34, 0.1, 1000000},
-
-            // Tiempo
-            {0.001, 1, 60, 3600, 86400, 604800, 2.628e+6, 3.154e+7, 3.1557e+8, 3.1557e+10},
-
-            // Almacenamiento
-            {0.125, 1, 1024, 1048576, 1073741824.0, 1099511627776.0, 1125899906842624.0,
-                    1.1529e+18, 1.1806e+21, 1.2089e+24},
-
-            // Masa
-            {0.000001, 0.001, 1, 1000, 1e6, 28.3495, 453.592, 6350.29, 100000, 907184.74},
-
-            // Volumen
-            {0.001, 0.01, 0.1, 1, 10, 100, 1000, 3.78541, 0.473176, 158.987},
-
-            // Transferencia de Datos
-            {1, 1000, 1e6, 1e9, 1e12, 8, 8000, 8e6, 8e9, 8e12}
-
-    };
-    public double convertir(int opcion, int de, int a, double cantidad) {
-        double factorDe = valores[opcion][de];
-        double factorA = valores[opcion][a];
-
-        if (opcion == 0) {
-            return cantidad * (factorA / factorDe);
+    private double calcularValor(int metrosConsumidos) {
+        double cuotaFija = 6.0;
+        if (metrosConsumidos <= 18) {
+            return cuotaFija;
+        } else if (metrosConsumidos <= 28) {
+            return cuotaFija + (metrosConsumidos - 18) * 0.45;
         } else {
-            return cantidad * (factorDe / factorA);
+            return cuotaFija + 10 * 0.45 + (metrosConsumidos - 28) * 0.65;
         }
-
     }
 
+    private void convertirArea() {
+        String unidadEntrada = unidadEntradaSpinner.getSelectedItem().toString();
+        String unidadSalida = unidadSalidaSpinner.getSelectedItem().toString();
+        double valorEntrada = Double.parseDouble(valorEntradaEditText.getText().toString());
+
+        double valorEnMetrosCuadrados = convertirAMetrosCuadrados(valorEntrada, unidadEntrada);
+        double valorConvertido = convertirDesdeMetrosCuadrados(valorEnMetrosCuadrados, unidadSalida);
+
+        resultadoConversionTextView.setText(String.format("%.2f %s", valorConvertido, unidadSalida));
+    }
+
+    private double convertirAMetrosCuadrados(double valor, String unidad) {
+        switch (unidad) {
+            case "Pie Cuadrado":
+                return valor * 0.092903;
+            case "Vara Cuadrada":
+                return valor * 0.6987;
+            case "Yarda Cuadrada":
+                return valor * 0.836127;
+            case "Metro Cuadrado":
+                return valor;
+            case "Tareas":
+                return valor * 437.5;  // Valor ajustado a medida salvadoreña
+            case "Manzana":
+                return valor * 6250;  // Valor ajustado a medida salvadoreña
+            case "Hectárea":
+                return valor * 10000;
+            default:
+                return 0;
+        }
+    }
+
+    private double convertirDesdeMetrosCuadrados(double valor, String unidad) {
+        switch (unidad) {
+            case "Pie Cuadrado":
+                return valor / 0.092903;
+            case "Vara Cuadrada":
+                return valor / 0.6987;
+            case "Yarda Cuadrada":
+                return valor / 0.836127;
+            case "Metro Cuadrado":
+                return valor;
+            case "Tareas":
+                return valor / 437.5;  // Valor ajustado a medida salvadoreña
+            case "Manzana":
+                return valor / 6250;  // Valor ajustado a medida salvadoreña
+            case "Hectárea":
+                return valor / 10000;
+            default:
+                return 0;
+        }
+    }
+
+    ;
 }
