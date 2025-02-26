@@ -24,19 +24,16 @@ public class MainActivity extends TabActivity {
 
         TabHost tabHost = getTabHost();
 
-        // Pestaña 1: Consumo de agua
         TabHost.TabSpec tab1 = tabHost.newTabSpec("Tab1");
         tab1.setIndicator("Consumo");
         tab1.setContent(R.id.tab1);
         tabHost.addTab(tab1);
 
-        // Pestaña 2: Conversor de áreas
         TabHost.TabSpec tab2 = tabHost.newTabSpec("Tab2");
         tab2.setIndicator("Conversor");
         tab2.setContent(R.id.tab2);
         tabHost.addTab(tab2);
 
-        // Configurar la lógica de la primera pestaña
         Button calcularButton = findViewById(R.id.calcularButton);
         calcularButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,7 +47,6 @@ public class MainActivity extends TabActivity {
             }
         });
 
-        // Configurar la lógica de la segunda pestaña
         unidadEntradaSpinner = findViewById(R.id.unidadEntradaSpinner);
         unidadSalidaSpinner = findViewById(R.id.unidadSalidaSpinner);
         valorEntradaEditText = findViewById(R.id.valorEntradaEditText);
@@ -104,9 +100,9 @@ public class MainActivity extends TabActivity {
             case "Metro Cuadrado":
                 return valor;
             case "Tareas":
-                return valor * 437.5;  // Valor ajustado a medida salvadoreña
+                return valor * 437.5;
             case "Manzana":
-                return valor * 6250;  // Valor ajustado a medida salvadoreña
+                return valor * 7000;
             case "Hectárea":
                 return valor * 10000;
             default:
@@ -125,9 +121,9 @@ public class MainActivity extends TabActivity {
             case "Metro Cuadrado":
                 return valor;
             case "Tareas":
-                return valor / 437.5;  // Valor ajustado a medida salvadoreña
+                return valor / 437.5;
             case "Manzana":
-                return valor / 6250;  // Valor ajustado a medida salvadoreña
+                return valor / 7000;
             case "Hectárea":
                 return valor / 10000;
             default:
