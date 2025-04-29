@@ -2,6 +2,7 @@ package com.alexis.miprimeraplicacion;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Build;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -39,7 +40,9 @@ public class enviarDatosServidor extends AsyncTask<String, String, String> {
             httpURLConnection.setRequestMethod(metodo);
             httpURLConnection.setRequestProperty("Content-Type", "application/json");
             httpURLConnection.setRequestProperty("Accept", "application/json");
-            httpURLConnection.setRequestProperty("Authorization", "Basic " + utilidades.credencialesCodificadas);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                httpURLConnection.setRequestProperty("Authorization", "Basic " + utilidades.credencialesCodificadas);
+            }
             //Enviar los datos al servidor
             Writer writer = new BufferedWriter(new OutputStreamWriter(httpURLConnection.getOutputStream(), "UTF-8"));
             writer.write(jsonDatos);

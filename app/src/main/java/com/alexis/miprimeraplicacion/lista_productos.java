@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -53,10 +54,9 @@ public class lista_productos extends Activity {
 
         fab = findViewById(R.id.fabAgregarProductos);
         fab.setOnClickListener(view -> abriVentana());
-        listarDatos();
-        DatosLocalRemoto();
 
-        datosNube();
+        di = new detectarInternet(this);
+        DatosLocalRemoto();
         listarDatos();
         buscarproductos();
     }
@@ -77,15 +77,13 @@ public class lista_productos extends Activity {
             }
 
         } catch (Exception e) {
-            mostrarMsg("Error:  1asada" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
     }
 
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         try {
-
-
             if (item.getItemId() == R.id.mnxNuevo) {
                 abriVentana();
             } else if (item.getItemId() == R.id.mnxModificar) {
@@ -97,17 +95,14 @@ public class lista_productos extends Activity {
                 } else {
                     parametros.putString("accion", "modificar");
                     parametros.putString("productos", jsonArray.getJSONObject(posicion).toString());
-
                     abriVentana();
                 }
-
-
             } else if (item.getItemId() == R.id.mnxEliminar) {
                 eliminarProducto();
             }
             return true;
         } catch (Exception e) {
-            mostrarMsg("Error:  2" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
             return super.onContextItemSelected(item);
         }
     }
@@ -118,55 +113,53 @@ public class lista_productos extends Activity {
             di = new detectarInternet(this);
             if (di.hayConexionInternet()) {
                 codigo = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("codigo");
-
             } else {
                 codigo = jsonArray.getJSONObject(posicion).getString("codigo");
-
             }
 
             AlertDialog.Builder confirmacion = new AlertDialog.Builder(this);
-            confirmacion.setTitle("Esta seguro de eliminar a: ");
+            confirmacion.setTitle("¿Está seguro de eliminar a: ");
             confirmacion.setMessage(codigo);
             confirmacion.setPositiveButton("Si", (dialog, which) -> {
                 try {
-
                     if (di.hayConexionInternet()) {//online
                         JSONObject datosproductos = new JSONObject();
 
                         String _id = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("_id");
                         String _rev = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("_rev");
+                        String idProducto = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("idProducto");
 
-                        String url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
+                        String url = null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
+                        }
                         enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
                         String respuesta = objEnviarDatosServidor.execute(datosproductos.toString(), "DELETE", url).get();
                         JSONObject respuestaJSON = new JSONObject(respuesta);
 
-                        String respuestalocal = db.administrar_productos("eliminar", new String[]{jsonArray.getJSONObject(posicion).getJSONObject("value").getString("idProducto")});
+                        String respuestalocal = db.administrarProductos("eliminar", new String[]{idProducto});
 
                         if (respuestaJSON.getBoolean("ok") && respuestalocal.equals("ok")) {
                             listarDatos();
-                            mostrarMsg("Registro eliminado con exito");
+                            mostrarMsg("Registro eliminado con éxito");
                         } else {
-                            mostrarMsg("Error:  3" + respuesta);
+                            mostrarMsg("Error: " + respuesta);
                         }
                     } else {
-                        db.administrarActualizados("modificar", "verdadero", jsonArray.getJSONObject(posicion).getString("idProducto"));
+                        String idProducto = jsonArray.getJSONObject(posicion).getString("idProducto");
+                        db.administrarActualizados("modificar", "verdadero", idProducto);
 
-                        String respuestalocal = db.administrar_productos("eliminar", new String[]{jsonArray.getJSONObject(posicion).getJSONObject("value").getString("idProducto")});
+                        String respuestalocal = db.administrarProductos("eliminar", new String[]{idProducto});
 
-                        if ( respuestalocal.equals("ok")) {
+                        if (respuestalocal.equals("ok")) {
                             listarDatos();
-                            mostrarMsg("Registro eliminado con exito");
+                            mostrarMsg("Registro eliminado con éxito");
                         } else {
-                            mostrarMsg("Error:  3" + respuestalocal);
+                            mostrarMsg("Error: " + respuestalocal);
                         }
-
                     }
-
-
-                    listarDatos();
                 } catch (Exception e) {
-                    mostrarMsg("Error:  5" + e.getMessage());
+                    mostrarMsg("Error: " + e.getMessage());
                 }
             });
             confirmacion.setNegativeButton("No", (dialog, which) -> {
@@ -174,7 +167,7 @@ public class lista_productos extends Activity {
             });
             confirmacion.create().show();
         } catch (Exception e) {
-            mostrarMsg("Error:  6" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
     }
 
@@ -188,14 +181,13 @@ public class lista_productos extends Activity {
         try {
             di = new detectarInternet(this);
             if (di.hayConexionInternet()) {//online
-
                 datosServidor = new obtenerDatosServidor();
                 String respuesta = datosServidor.execute().get();
 
                 jsonObject = new JSONObject(respuesta);
                 jsonArray = jsonObject.getJSONArray("rows");
 
-                cproductosAuxiliar = db.lista_productosActializados();
+                cproductosAuxiliar = db.obtenerProductos();
 
                 if (cproductosAuxiliar.moveToFirst()) {
                     jsonArrayAuxiliar = new JSONArray();
@@ -205,23 +197,20 @@ public class lista_productos extends Activity {
                     if (Objects.equals(cproductosAuxiliar.getString(1), falso) || Objects.equals(cproductosAuxiliar.getString(1), "0")) {
                         mostrarDatosproductos();
                     }
-
+                } else {
+                    mostrarDatosproductos();
                 }
-
-
             } else {//offline
-
                 obtenerDatosproductos();
             }
         } catch (Exception e) {
-            mostrarMsg("Error:  7" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
     }
 
     private void obtenerDatosproductos() {
         try {
-            cproductos = db.lista_productos();
-
+            cproductos = db.obtenerProductosActualizados();
 
             if (cproductos.moveToFirst()) {
                 jsonArray = new JSONArray();
@@ -243,36 +232,29 @@ public class lista_productos extends Activity {
                     jsonArray.put(jsonObject);
                 } while (cproductos.moveToNext());
 
-
                 mostrarDatosproductos();
             } else {
                 mostrarMsg("No hay productos registrados.");
                 abriVentana();
             }
         } catch (Exception e) {
-            mostrarMsg("Error:  8" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
     }
 
     private void mostrarDatosproductos() {
         try {
-
-
             if (jsonArray.length() >= 1) {
                 ltsproductos = findViewById(R.id.ltsProductos);
                 alproductos.clear();
                 alProductosCopia.clear();
                 di = new detectarInternet(this);
-                cproductosAuxiliar = db.lista_productosActializados();
+                cproductosAuxiliar = db.obtenerProductosActualizados();
 
                 boolean respuesta = di.hayConexionInternet();
-
                 boolean results = true;
 
-                cproductosAuxiliar = db.lista_productosActializados();
                 if (cproductosAuxiliar.moveToFirst()) {
-
-
                     String verdadero = "verdadero";
 
                     if (Objects.equals(cproductosAuxiliar.getString(1), verdadero) || Objects.equals(cproductosAuxiliar.getString(1), "0")) {
@@ -280,35 +262,35 @@ public class lista_productos extends Activity {
                     }
                 }
 
-
                 for (int i = 0; i < jsonArray.length(); i++) {
+                    try {
+                        if (respuesta && results) {
+                            jsonObject = jsonArray.getJSONObject(i).getJSONObject("value");
+                        } else {
+                            jsonObject = jsonArray.getJSONObject(i);
+                        }
 
-                    if (respuesta && results) {
-                        jsonObject = jsonArray.getJSONObject(i).getJSONObject("value");
-                    } else {
-
-                        jsonObject = jsonArray.getJSONObject(i);
+                        misProductos = new productos(
+                                jsonObject.getString("idProducto"),
+                                jsonObject.getString("codigo"),
+                                jsonObject.getString("descripcion"),
+                                jsonObject.getString("marca"),
+                                jsonObject.getString("presentacion"),
+                                jsonObject.getString("precio"),
+                                jsonObject.getString("costo"),
+                                jsonObject.getString("ganancia"),
+                                jsonObject.getString("stock"),
+                                jsonObject.getString("foto"),
+                                jsonObject.getString("foto1"),
+                                jsonObject.getString("foto2")
+                        );
+                        alproductos.add(misProductos);
+                    } catch (JSONException e) {
+                        // Manejar error por producto individual pero continuar con el bucle
+                        mostrarMsg("Error con producto #" + i + ": " + e.getMessage());
                     }
-
-
-                    misProductos = new productos(
-                            jsonObject.getString("idProducto"),
-                            jsonObject.getString("codigo"),
-                            jsonObject.getString("descripcion"),
-                            jsonObject.getString("marca"),
-                            jsonObject.getString("presentacion"),
-                            jsonObject.getString("precio"),
-                            jsonObject.getString("costo"),
-                            jsonObject.getString("ganancia"),
-                            jsonObject.getString("stock"),
-                            jsonObject.getString("foto"),
-                            jsonObject.getString("foto1"),
-                            jsonObject.getString("foto2")
-
-                    );
-                    alproductos.add(misProductos);
-
                 }
+
                 alProductosCopia.addAll(alproductos);
                 ltsproductos.setAdapter(new AdaptadorProductos(this, alproductos));
                 registerForContextMenu(ltsproductos);
@@ -317,7 +299,7 @@ public class lista_productos extends Activity {
                 abriVentana();
             }
         } catch (Exception e) {
-            mostrarMsg("Error:  9" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
     }
 
@@ -326,30 +308,32 @@ public class lista_productos extends Activity {
         tempVal.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                alproductos.clear();
-                String buscar = tempVal.getText().toString().trim().toLowerCase();
-                if (buscar.length() <= 0) {
-                    alproductos.addAll(alProductosCopia);
-                } else {
-                    for (productos item : alProductosCopia) {
-                        if (item.getcodigo().toLowerCase().contains(buscar) ||
-                                item.getmarca().toLowerCase().contains(buscar) ||
-                                item.getdescripcion().toLowerCase().contains(buscar)) {
-                            alproductos.add(item);
+                try {
+                    alproductos.clear();
+                    String buscar = tempVal.getText().toString().trim().toLowerCase();
+                    if (buscar.length() == 0) {
+                        alproductos.addAll(alProductosCopia);
+                    } else {
+                        for (productos item : alProductosCopia) {
+                            if (item.getcodigo().toLowerCase().contains(buscar) ||
+                                    item.getmarca().toLowerCase().contains(buscar) ||
+                                    item.getdescripcion().toLowerCase().contains(buscar)) {
+                                alproductos.add(item);
+                            }
                         }
                     }
                     ltsproductos.setAdapter(new AdaptadorProductos(getApplicationContext(), alproductos));
+                } catch (Exception e) {
+                    mostrarMsg("Error en búsqueda: " + e.getMessage());
                 }
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
@@ -360,21 +344,21 @@ public class lista_productos extends Activity {
 
     private void DatosLocalRemoto(){
         try {
-
             di = new detectarInternet(this);
             if (di.hayConexionInternet()) {
-                cproductosAuxiliar = db.lista_productosActializados();
+                cproductosAuxiliar = db.obtenerProductosActualizados();
                 if (cproductosAuxiliar.moveToFirst()) {
                     jsonArrayAuxiliar = new JSONArray();
 
                     String verdadero = "verdadero";
                     if (Objects.equals(cproductosAuxiliar.getString(1), verdadero)) {
-                    /*    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        // Se puede descomentar si se quiere mostrar el diálogo
+                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
                         builder.setTitle("Datos no guardados");
                         builder.setMessage("¿Reestablecer datos?");
                         builder.setPositiveButton("Usar datos del dispositivo", (dialogInterface, i) -> datosDispositivo());
-                        builder.setNegativeButton("Usar datos de gurdados en la nube", (dialogInterface, i) -> datosNube());
-                        builder.show();*/
+                        builder.setNegativeButton("Usar datos guardados en la nube", (dialogInterface, i) -> datosNube());
+                        builder.show();
 
                         datosNube();
                         datosDispositivo();
@@ -382,54 +366,72 @@ public class lista_productos extends Activity {
                 }
             }
         } catch (Exception e) {
-            mostrarMsg("Error: 11" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
-
     }
+
     private void datosDispositivo(){
         try{
-            for (int i = 0; i < jsonArray.length(); i++){
-                JSONObject datosproductos = new JSONObject();
-                String _id = jsonArray.getJSONObject(i).getJSONObject("value").getString("_id");
-                String _rev = jsonArray.getJSONObject(i).getJSONObject("value").getString("_rev");
-                String url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
-                enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
-                String respuesta = objEnviarDatosServidor.execute(datosproductos.toString(), "DELETE", url).get();
+            // Primero eliminar datos en la nube
+            if (jsonArray != null && jsonArray.length() > 0) {
+                for (int i = 0; i < jsonArray.length(); i++){
+                    try {
+                        JSONObject datosproductos = new JSONObject();
+                        String _id = jsonArray.getJSONObject(i).getJSONObject("value").getString("_id");
+                        String _rev = jsonArray.getJSONObject(i).getJSONObject("value").getString("_rev");
+                        String url = null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
+                        }
+                        enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
+                        objEnviarDatosServidor.execute(datosproductos.toString(), "DELETE", url).get();
+                    } catch (Exception e) {
+                        // Continuar con el siguiente producto
+                    }
+                }
             }
+
+            // Obtener datos locales
             obtenerDatosproductos();
 
-            for (int i = 0; i < jsonArray.length(); i++) {
+            // Enviar datos locales a la nube
+            if (jsonArray != null && jsonArray.length() > 0) {
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    try {
+                        jsonObject = jsonArray.getJSONObject(i);
 
+                        JSONObject datosProductos = new JSONObject();
 
-                jsonObject = jsonArray.getJSONObject(i);
+                        datosProductos.put("idProducto", jsonObject.getString("idProducto"));
+                        datosProductos.put("codigo", jsonObject.getString("codigo"));
+                        datosProductos.put("descripcion", jsonObject.getString("descripcion"));
+                        datosProductos.put("marca", jsonObject.getString("marca"));
+                        datosProductos.put("presentacion", jsonObject.getString("presentacion"));
+                        datosProductos.put("precio", jsonObject.getString("precio"));
+                        datosProductos.put("costo", jsonObject.getString("costo"));
+                        datosProductos.put("ganancia", jsonObject.getString("ganancia"));
+                        datosProductos.put("stock", jsonObject.getString("stock"));
+                        datosProductos.put("foto", jsonObject.getString("foto"));
+                        datosProductos.put("foto1", jsonObject.getString("foto1"));
+                        datosProductos.put("foto2", jsonObject.getString("foto2"));
 
-                JSONObject datosProductos = new JSONObject();
-
-                datosProductos.put("idProducto", jsonObject.getString("idProducto"));
-                datosProductos.put("codigo", jsonObject.getString("codigo"));
-                datosProductos.put("descripcion", jsonObject.getString("descripcion"));
-                datosProductos.put("marca", jsonObject.getString("marca"));
-                datosProductos.put("presentacion", jsonObject.getString("presentacion"));
-                datosProductos.put("precio", jsonObject.getString("precio"));
-                datosProductos.put("costo", jsonObject.getString("costo"));
-                datosProductos.put("ganancia", jsonObject.getString("ganancia"));
-                datosProductos.put("stock", jsonObject.getString("stock"));
-                datosProductos.put("foto", jsonObject.getString("foto"));
-                datosProductos.put("foto1", jsonObject.getString("foto1"));
-                datosProductos.put("foto2", jsonObject.getString("foto2"));
-
-                alproductos.add(misProductos);
-                enviarDatosServidor objEnviarDatos = new enviarDatosServidor(this);
-                String respuesta = objEnviarDatos.execute(datosProductos.toString(), "POST", utilidades.url_mto).get();
+                        enviarDatosServidor objEnviarDatos = new enviarDatosServidor(this);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            objEnviarDatos.execute(datosProductos.toString(), "POST", utilidades.url_mto).get();
+                        }
+                    } catch (Exception e) {
+                        // Continuar con el siguiente producto
+                    }
+                }
             }
-            db = new DB(this);
-            String res =   db.administrarActualizados("modificar", "falso","0");
-            mostrarMsg(res + " Datos actualizados con exito");
+
+            // Actualizar estado en BD local
+            String res = db.administrarActualizados("modificar", "falso", "0");
+            mostrarMsg("Datos actualizados con éxito: " + res);
             listarDatos();
         } catch (Exception e) {
-            mostrarMsg("Error: 101" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
-
     }
 
     public void datosNube(){
@@ -445,44 +447,50 @@ public class lista_productos extends Activity {
                 jsonObject = new JSONObject(respuestaServido);
                 jsonArray = jsonObject.getJSONArray("rows");
 
-                for (int i = 0; i < jsonArray.length(); i++) {
+                if (jsonArray != null && jsonArray.length() > 0 && jsonArrayAuxiliar != null) {
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        try {
+                            String idProducto = jsonArray.getJSONObject(i).getJSONObject("value").getString("idProducto");
+                            String codigo = jsonArray.getJSONObject(i).getJSONObject("value").getString("codigo");
+                            String descripcion = jsonArray.getJSONObject(i).getJSONObject("value").getString("descripcion");
+                            String marca = jsonArray.getJSONObject(i).getJSONObject("value").getString("marca");
+                            String presentacion = jsonArray.getJSONObject(i).getJSONObject("value").getString("presentacion");
+                            String precio = jsonArray.getJSONObject(i).getJSONObject("value").getString("precio");
+                            String costo = jsonArray.getJSONObject(i).getJSONObject("value").getString("costo");
+                            String ganancia = jsonArray.getJSONObject(i).getJSONObject("value").getString("ganancia");
+                            String stock = jsonArray.getJSONObject(i).getJSONObject("value").getString("stock");
+                            String foto = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto");
+                            String foto1 = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto1");
+                            String foto2 = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto2");
 
-                    String idProducto = jsonArray.getJSONObject(i).getJSONObject("value").getString("idProducto");
+                            boolean existeEnLocal = false;
 
-                    String codigo = jsonArray.getJSONObject(i).getJSONObject("value").getString("codigo");
-                    String descripcion = jsonArray.getJSONObject(i).getJSONObject("value").getString("descripcion");
-                    String marca = jsonArray.getJSONObject(i).getJSONObject("value").getString("marca");
-                    String presentacion = jsonArray.getJSONObject(i).getJSONObject("value").getString("presentacion");
-                    String precio = jsonArray.getJSONObject(i).getJSONObject("value").getString("precio");
-                    String costo = jsonArray.getJSONObject(i).getJSONObject("value").getString("costo");
-                    String ganancia = jsonArray.getJSONObject(i).getJSONObject("value").getString("ganancia");
-                    String stock = jsonArray.getJSONObject(i).getJSONObject("value").getString("stock");
-                    String foto = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto");
-                    String foto1 = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto1");
-                    String foto2 = jsonArray.getJSONObject(i).getJSONObject("value").getString("foto2");
+                            for (int index = 0; index < jsonArrayAuxiliar.length(); index++) {
+                                jsonObjectAuxiliar = jsonArrayAuxiliar.getJSONObject(index);
+                                if (idProducto.equals(jsonObjectAuxiliar.getString("id"))) {
+                                    existeEnLocal = true;
+                                    break;
+                                }
+                            }
 
-                    for (int index = 0; index < jsonArrayAuxiliar.length()-1; index++) {
-                        jsonObjectAuxiliar = jsonArrayAuxiliar.getJSONObject(index);
-
-                        if (jsonArray.getJSONObject(i).getJSONObject("value").getString("id") != jsonObjectAuxiliar.getString("idProducto")){
-                            String[] datos = {idProducto, codigo, descripcion, marca, presentacion, precio, foto,foto1,foto2};
-                            String respuesta = db.administrar_productos("nuevo", datos);
+                            if (!existeEnLocal) {
+                                String[] datos = {idProducto, codigo, descripcion, marca, presentacion, precio, costo, ganancia, stock, foto, foto1, foto2};
+                                String respuesta = db.administrarProductos("nuevo", datos);
+                            }
+                        } catch (Exception e) {
+                            // Continuar con el siguiente producto
                         }
                     }
-
                 }
             }
-
-
         } catch (Exception e) {
-            mostrarMsg("Error: 10" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
-
     }
 
     private void obtenerDatosproductosmod() {
         try {
-            cproductosAuxiliar = db.lista_productosActializados();
+            cproductosAuxiliar = db.obtenerProductos();
 
             if (cproductosAuxiliar.moveToFirst()) {
                 jsonArrayAuxiliar = new JSONArray();
@@ -492,11 +500,9 @@ public class lista_productos extends Activity {
                     jsonObjectAuxiliar.put("actualizado", cproductosAuxiliar.getString(1));
                     jsonArrayAuxiliar.put(jsonObjectAuxiliar);
                 } while (cproductosAuxiliar.moveToNext());
-
             }
         } catch (Exception e) {
-            mostrarMsg("Error:  8" + e.getMessage());
+            mostrarMsg("Error: " + e.getMessage());
         }
     }
-
 }

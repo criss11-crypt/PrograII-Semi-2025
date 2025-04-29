@@ -1,7 +1,11 @@
 package com.alexis.miprimeraplicacion;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -46,7 +50,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        utls = new utilidades();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            utls = new utilidades();
+        }
         img = findViewById(R.id.imgFotoProducto);
         db = new DB(this);
         btn = findViewById(R.id.btnGuardarProducto);
@@ -89,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
             mostrarMsg("No hay mas fotos");
         }
     }
+    @SuppressLint("SetTextI18n")
     private void anteriorClick(){
         if (posicionImg > 0) {
             posicionImg--;
@@ -153,7 +160,9 @@ public class MainActivity extends AppCompatActivity {
                 urlCompletaFoto2 = datos.getString("foto2");
                 img.setImageURI(Uri.parse(urlCompletaFoto));
             }else {
-                idProducto = utls.generarUnicoId();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    idProducto = utls.generarUnicoId();
+                }
             }
         }catch (Exception e){
             mostrarMsg("Error: "+e.getMessage());
@@ -184,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         try{
             if( requestCode==1 && resultCode==RESULT_OK ){
-                //Bitmap imagenBitmap = BitmapFactory.decodeFile(urlCompletaFoto);
+                Bitmap imagenBitmap = BitmapFactory.decodeFile(urlCompletaFoto);
                 switch (posicionImg) {
                     case 0:
                         img.setImageURI(Uri.parse(urlCompletaFoto));
@@ -208,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
         String fechaHoraMs = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()),
                 fileName = "imagen_"+ fechaHoraMs+"_";
         File dirAlmacenamiento = getExternalFilesDir(Environment.DIRECTORY_DCIM);
-        if( dirAlmacenamiento.exists()==false ){
+        if(!dirAlmacenamiento.exists()){
             dirAlmacenamiento.mkdir();
         }
         File image = File.createTempFile(fileName, ".jpg", dirAlmacenamiento);
@@ -288,7 +297,10 @@ public class MainActivity extends AppCompatActivity {
             if(di.hayConexionInternet()) {//online
                 //enviar los datos al servidor
                 enviarDatosServidor objEnviarDatos = new enviarDatosServidor(this);
-                String respuesta = objEnviarDatos.execute(datosProductos.toString(), "POST", utilidades.url_mto).get();
+                String respuesta = null;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    respuesta = objEnviarDatos.execute(datosProductos.toString(), "POST", utilidades.url_mto).get();
+                }
 
                 JSONObject respuestaJSON = new JSONObject(respuesta);
                 if(respuestaJSON.getBoolean("ok")){
@@ -303,7 +315,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
             String[] datos = {idProducto, codigo, descripcion, marca, presentacion, precio, urlCompletaFoto, urlCompletaFoto1, urlCompletaFoto2};
-            String respuesta = db.administrar_productos(accion, datos);
+            String respuesta = db.administrarProductos(accion, datos);
 
             Toast.makeText(getApplicationContext(), "estado de registro ." + respuesta, Toast.LENGTH_LONG).show();
             abrirVentana();

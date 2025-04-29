@@ -1,6 +1,7 @@
 package com.alexis.miprimeraplicacion;
 
 import android.os.AsyncTask;
+import android.os.Build;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -22,7 +23,9 @@ public class obtenerDatosServidor extends AsyncTask<String, String, String> {
             URL url = new URL(utilidades.url_consulta);
             httpURLConnection = (HttpURLConnection) url.openConnection();
             httpURLConnection.setRequestMethod("GET");
-            httpURLConnection.setRequestProperty("Authorization", "Basic " + utilidades.credencialesCodificadas);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                httpURLConnection.setRequestProperty("Authorization", "Basic " + utilidades.credencialesCodificadas);
+            }
 
             InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
